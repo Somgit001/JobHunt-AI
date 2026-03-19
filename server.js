@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PORT = 3000;
-const API_KEY = process.env.GROQ_API_KEY || '';
+const API_KEY = process.env.GRO || '';
 
 const server = http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
