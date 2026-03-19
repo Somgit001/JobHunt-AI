@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>JobHunt AI — Fresher Job Finder</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #ffffff;
+      --bg2: #f5f5f3;
+      --bg3: #eeede8;
+      --text: #1a1a18;
+      --text2: #6b6b67;
+      --text3: #9e9e99;
+      --border: rgba(0,0,0,0.12);
+      --border2: rgba(0,0,0,0.22);
+      --radius: 10px;
+      --radius-sm: 7px;
+      --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1c1a;
+        --bg2: #252523;
+        --bg3: #2e2e2b;
+        --text: #f0efe8;
+        --text2: #a0a09a;
+        --text3: #6e6e68;
+        --border: rgba(255,255,255,0.1);
+        --border2: rgba(255,255,255,0.2);
+      }
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg2);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    .topbar {
+      background: var(--bg);
+      border-bottom: 0.5px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .topbar-title { font-size: 18px; font-weight: 600; color: var(--text); }
+    .topbar-sub { font-size: 13px; color: var(--text2); margin-top: 1px; }
+
+    .api-badge {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--bg2); border: 0.5px solid var(--border2);
+      border-radius: var(--radius-sm); padding: 6px 12px; cursor: pointer;
+    }
+    .api-badge span { font-size: 12px; color: var(--text2); }
+    .api-dot { width: 8px; height: 8px; border-radius: 50%; background: #e24b4a; flex-shrink: 0; }
+    .api-dot.connected { background: #639922; }
+
+    .main { max-width: 860px; margin: 0 auto; padding: 24px 16px; }
+
+    .tabs {
+      display: flex; gap: 2px;
+      background: var(--bg3); border-radius: var(--radius);
+      padding: 4px; margin-bottom: 20px;
+    }
+    .tab {
+      flex: 1; padding: 8px; font-size: 14px; font-weight: 500;
+      cursor: pointer; border: none; background: transparent;
+      color: var(--text2); border-radius: var(--radius-sm);
+      transition: all 0.15s; font-family: var(--font);
+    }
+    .tab.active { background: var(--bg); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .card {
+      background: var(--bg); border: 0.5px solid var(--border);
+      border-radius: var(--radius); padding: 20px; margin-bottom: 14px;
+    }
+
+    .section-label {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.07em;
+      text-transform: uppercase; color: var(--text3); margin-bottom: 14px;
+    }
+
+    label { font-size: 13px; color: var(--text2); display: block; margin-bottom: 5px; }
+
+    input[type=text], input[type=date], input[type=password], textarea, select {
+      width: 100%; background: var(--bg2); border: 0.5px solid var(--border2);
+      border-radius: var(--radius-sm); padding: 9px 12px;
+      font-size: 14px; color: var(--text); font-family: var(--font);
+      resize: vertical; outline: none; transition: border-color 0.15s;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--text2); }
+    input[type=password] { letter-spacing: 0.1em; }
+
+    .mb14 { margin-bottom: 14px; }
+    .mb10 { margin-bottom: 10px; }
+
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+
+    @media (max-width: 540px) {
+      .grid2, .grid3 { grid-template-columns: 1fr; }
+    }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 18px; font-size: 14px; font-weight: 500;
+      cursor: pointer; border-radius: var(--radius-sm);
+      border: 0.5px solid var(--border2);
+      background: var(--bg); color: var(--text);
+      font-family: var(--font); transition: all 0.14s;
+    }
+    .btn:hover { background: var(--bg2); }
+    .btn.primary {
+      background: var(--text); color: var(--bg);
+      border-color: transparent;
+    }
+    .btn.primary:hover { opacity: 0.85; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-sm { padding: 5px 11px; font-size: 12px; }
+
+    .stat-card {
+      background: var(--bg2); border-radius: var(--radius-sm);
+      padding: 16px; text-align: center;
+    }
+    .stat-num { font-size: 28px; font-weight: 600; }
+    .stat-lbl { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+    .badge {
+      font-size: 11px; padding: 3px 9px;
+      border-radius: 20px; display: inline-block;
+    }
+    .b-blue { background: #dbeeff; color: #0a4a8a; }
+    .b-green { background: #d9f0c4; color: #2d5e0e; }
+    .b-amber { background: #fde8c0; color: #7a4200; }
+    .b-gray { background: #e8e7e1; color: #555550; }
+    .b-teal { background: #d0f0e6; color: #0a5a40; }
+
+    @media (prefers-color-scheme: dark) {
+      .b-blue { background: #0c3560; color: #8dc8f5; }
+      .b-green { background: #1a3a08; color: #8bce50; }
+      .b-amber { background: #4a2800; color: #f5b860; }
+      .b-gray { background: #2e2e2b; color: #a0a09a; }
+      .b-teal { background: #06352a; color: #5dd4aa; }
+    }
+
+    .job-card {
+      background: var(--bg); border: 0.5px solid var(--border);
+      border-radius: var(--radius); padding: 16px 18px; margin-bottom: 10px;
+    }
+    .job-title { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+    .job-sub { font-size: 13px; color: var(--text2); }
+    .job-meta { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+    .job-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
+
+    .board-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 11px; font-size: 12px; font-weight: 500;
+      cursor: pointer; border-radius: var(--radius-sm);
+      border: 0.5px solid var(--border2);
+      background: var(--bg2); color: var(--text);
+      text-decoration: none; transition: all 0.12s; font-family: var(--font);
+    }
+    .board-btn:hover { background: var(--bg); border-color: var(--text3); }
+    .board-btn.apply-primary { border-color: var(--text2); font-weight: 600; }
+
+    .b-icon {
+      width: 14px; height: 14px; border-radius: 3px;
+      display: inline-block; flex-shrink: 0;
+    }
+    .li { background: #0077B5; }
+    .nk { background: #FF7555; }
+    .is { background: #00AEEF; }
+    .wf { background: #000; border-radius: 50%; }
+    .id { background: #2164f3; }
+
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid var(--border2);
+      border-top-color: var(--text2);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 0; border-bottom: 0.5px solid var(--border);
+      font-size: 14px; color: var(--text2);
+    }
+
+    .cover-output {
+      background: var(--bg2); border: 0.5px solid var(--border);
+      border-radius: var(--radius-sm); padding: 14px;
+      font-size: 14px; line-height: 1.75; color: var(--text);
+      white-space: pre-wrap; min-height: 80px;
+    }
+
+    .progress-bar {
+      height: 3px; background: var(--bg3);
+      border-radius: 2px; overflow: hidden; margin: 10px 0;
+    }
+    .progress-fill {
+      height: 100%; background: var(--text);
+      border-radius: 2px; transition: width 0.4s;
+    }
+
+    .step-row { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 14px; }
+    .step-circle {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--text); color: var(--bg);
+      font-size: 12px; font-weight: 600;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .step-title { font-size: 14px; font-weight: 500; }
+    .step-desc { font-size: 13px; color: var(--text2); margin-top: 2px; }
+
+    .divider { border: none; border-top: 0.5px solid var(--border); margin: 16px 0; }
+
+    .launch-box {
+      background: var(--bg2); border-radius: var(--radius-sm);
+      padding: 14px; margin-top: 12px;
+    }
+    .launch-label { font-size: 12px; color: var(--text2); font-weight: 500; margin-bottom: 8px; }
+    .launch-row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    .api-modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45); z-index: 200;
+      align-items: center; justify-content: center;
+    }
+    .api-modal-overlay.open { display: flex; }
+    .api-modal {
+      background: var(--bg); border: 0.5px solid var(--border2);
+      border-radius: var(--radius); padding: 24px; width: 420px; max-width: 95vw;
+    }
+    .api-modal h2 { font-size: 17px; font-weight: 600; margin-bottom: 8px; }
+    .api-modal p { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 14px; }
+    .api-modal a { color: #2164f3; }
+    .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+    .notice {
+      background: #faeeda; border: 0.5px solid #e4c080;
+      border-radius: var(--radius-sm); padding: 10px 14px;
+      font-size: 13px; color: #7a4200; margin-bottom: 14px;
+    }
+    @media (prefers-color-scheme: dark) {
+      .notice { background: #3a2200; border-color: #7a4200; color: #f5b860; }
+    }
+
+    .flex-wrap { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  </style>
+</head>
+<body>
+
+<!-- Server info modal -->
+<div class="api-modal-overlay" id="apiModal">
+  <div class="api-modal">
+    <h2>How to start the server</h2>
+    <p>Open a terminal in the folder containing <strong>server.js</strong> and run:</p>
+    <pre style="background:var(--bg2);padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:12px;overflow-x:auto;">set ANTHROPIC_API_KEY=sk-ant-...
+node server.js</pre>
+    <p>Then open <strong>http://localhost:3000</strong> in your browser.</p>
+    <div class="modal-footer">
+      <button class="btn primary" onclick="closeModal()">Got it</button>
+    </div>
+  </div>
+</div>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <div>
+    <div class="topbar-title">JobHunt AI</div>
+    <div class="topbar-sub">Fresher job finder + cover letter generator</div>
+  </div>
+  <div class="api-badge" onclick="openModal()" title="Click to set API key">
+    <div class="api-dot" id="apiDot"></div>
+    <span id="apiStatus">API key not set</span>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('setup',0)">Setup</button>
+    <button class="tab" onclick="switchTab('search',1)">Job Search</button>
+    <button class="tab" onclick="switchTab('cover',2)">Cover Letter</button>
+    <button class="tab" onclick="switchTab('tracker',3)">Tracker</button>
+  </div>
+
+  <!-- ── SETUP ── -->
+  <div id="tab-setup" class="panel active">
+    <div class="card">
+      <div class="section-label">Your profile</div>
+      <div class="mb14"><label>Name & degree</label><input type="text" id="name" value="Som — BCA, Sri Sri University, 2026 (Fresher)" /></div>
+      <div class="mb14"><label>Key skills (comma-separated)</label><input type="text" id="skills" value="Python, Java, AWS EC2/S3, Git, SQL, Linux, REST APIs, DevOps basics" /></div>
+      <div class="mb14"><label>Target roles</label><input type="text" id="roles" value="Cloud Support Associate, DevOps Engineer, Data Analyst, Technical Support Associate, Java Developer" /></div>
+      <div class="mb14"><label>Preferred locations</label><input type="text" id="location" value="Bengaluru, Hyderabad, Pune, Remote" /></div>
+      <div class="mb14">
+        <label>Professional summary (used in cover letters)</label>
+        <textarea id="bio" rows="4">Final-year BCA student at Sri Sri University (graduating April 2026). Strong in Python, Java, and AWS. Completed academic projects in NLP and cloud deployment. Actively seeking fresher roles in DevOps, Cloud, Data Analytics, or Technical Support. Quick learner with hands-on project experience. Immediate joiner.</textarea>
+      </div>
+      <button class="btn primary" onclick="saveProfile()">Save profile</button>
+    </div>
+
+    <div class="card">
+      <div class="section-label">How to use</div>
+      <div class="step-row">
+        <div class="step-circle">1</div>
+        <div><div class="step-title">Set your API key</div><div class="step-desc">Click the top-right badge → paste your Anthropic API key. Free tier works fine.</div></div>
+      </div>
+      <div class="step-row">
+        <div class="step-circle">2</div>
+        <div><div class="step-title">Fill your profile above</div><div class="step-desc">Skills, roles, bio — used to personalize every output.</div></div>
+      </div>
+      <div class="step-row">
+        <div class="step-circle">3</div>
+        <div><div class="step-title">Run job search</div><div class="step-desc">AI finds fresher openings. Each result has direct Apply buttons to LinkedIn, Naukri, Internshala, Wellfound, and Indeed.</div></div>
+      </div>
+      <div class="step-row">
+        <div class="step-circle">4</div>
+        <div><div class="step-title">Generate cover letter</div><div class="step-desc">Paste any JD — get a tailored, ATS-friendly letter in seconds.</div></div>
+      </div>
+      <div class="step-row">
+        <div class="step-circle">5</div>
+        <div><div class="step-title">Track applications</div><div class="step-desc">Stay organized with live status tracking across all companies.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SEARCH ── -->
+  <div id="tab-search" class="panel">
+    <div id="noKeyNotice" class="notice" style="display:none;">
+      ⚠ API key not set. Set it via the top-right badge to use AI search. You can still use the quick launch buttons below.
+    </div>
+    <div class="card">
+      <div class="section-label">Search settings</div>
+      <div class="grid2 mb14">
+        <div><label>Job role</label>
+          <select id="searchRole" onchange="renderQuickLaunch()">
+            <option>Cloud Support Associate</option>
+            <option>DevOps Engineer Fresher</option>
+            <option>Data Analyst Fresher</option>
+            <option>Technical Support Associate</option>
+            <option>Java Developer Fresher</option>
+            <option>Python Developer Fresher</option>
+            <option>AWS Cloud Intern</option>
+            <option>Full Stack Developer Fresher</option>
+            <option>Network Engineer Fresher</option>
+          </select>
+        </div>
+        <div><label>Location</label>
+          <select id="searchLoc" onchange="renderQuickLaunch()">
+            <option>Bengaluru</option>
+            <option>Hyderabad</option>
+            <option>Pune</option>
+            <option>Mumbai</option>
+            <option>Chennai</option>
+            <option>Delhi NCR</option>
+            <option>Remote</option>
+            <option>Pan India</option>
+          </select>
+        </div>
+      </div>
+      <div class="mb14"><label>Extra keywords (optional)</label><input type="text" id="extraKw" placeholder="e.g. 0-1 year experience, batch 2026" /></div>
+      <div class="flex-wrap">
+        <button class="btn primary" id="searchBtn" onclick="runSearch()">Find jobs with AI ↗</button>
+        <span style="font-size:13px;color:var(--text2);">or jump straight to a job board →</span>
+      </div>
+      <div class="launch-box">
+        <div class="launch-label">Open live search on job boards (updates with your selections above)</div>
+        <div class="launch-row" id="quickLaunch"></div>
+      </div>
+    </div>
+
+    <div id="searchProgress" style="display:none;" class="card">
+      <div class="loading-row"><div class="spinner"></div>Searching LinkedIn Jobs...</div>
+      <div class="loading-row"><div class="spinner"></div>Scanning Naukri.com...</div>
+      <div class="loading-row"><div class="spinner"></div>Checking Internshala...</div>
+      <div class="loading-row"><div class="spinner"></div>Scanning Wellfound & Indeed...</div>
+    </div>
+
+    <div id="jobResults"></div>
+  </div>
+
+  <!-- ── COVER LETTER ── -->
+  <div id="tab-cover" class="panel">
+    <div class="card">
+      <div class="section-label">Job description</div>
+      <textarea id="jdInput" rows="8" placeholder="Paste the full job description here — role, responsibilities, requirements, company name..."></textarea>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+        <button class="btn primary" id="genBtn" onclick="generateCover()">Generate cover letter ↗</button>
+        <button class="btn" onclick="clearCover()">Clear</button>
+      </div>
+      <div id="genProgress" style="display:none;margin-top:12px;">
+        <div class="progress-bar"><div class="progress-fill" id="genBar" style="width:0%"></div></div>
+        <div style="font-size:13px;color:var(--text2);" id="genMsg">Analyzing job description...</div>
+      </div>
+    </div>
+
+    <div id="coverOut" style="display:none;" class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <div class="section-label" style="margin:0;">Generated cover letter</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn btn-sm" onclick="copyCover()">Copy</button>
+          <button class="btn btn-sm" onclick="downloadCover()">Download .txt</button>
+        </div>
+      </div>
+      <div class="cover-output" id="coverText"></div>
+      <div class="divider"></div>
+      <div style="font-size:13px;color:var(--text2);">
+        Skill match: <span id="matchScore" style="font-weight:600;color:var(--text);"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TRACKER ── -->
+  <div id="tab-tracker" class="panel">
+    <div class="grid3" style="margin-bottom:16px;">
+      <div class="stat-card"><div class="stat-num" id="t-applied">0</div><div class="stat-lbl">Applied</div></div>
+      <div class="stat-card"><div class="stat-num" id="t-interview">0</div><div class="stat-lbl">Interviews</div></div>
+      <div class="stat-card"><div class="stat-num" id="t-offer">0</div><div class="stat-lbl">Offers</div></div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">Add application</div>
+      <div class="grid2 mb10">
+        <div><label>Company</label><input type="text" id="tComp" placeholder="e.g. Capgemini" /></div>
+        <div><label>Role</label><input type="text" id="tRole" placeholder="e.g. DevOps Engineer" /></div>
+      </div>
+      <div class="grid2 mb10">
+        <div><label>Date applied</label><input type="date" id="tDate" /></div>
+        <div><label>Status</label>
+          <select id="tStatus">
+            <option value="applied">Applied</option>
+            <option value="interview">Interview scheduled</option>
+            <option value="offer">Offer received</option>
+            <option value="rejected">Rejected</option>
+            <option value="pending">Pending / No response</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn primary" onclick="addApplication()">Add application</button>
+    </div>
+
+    <div id="trackerList"></div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+// ── State ──
+let applications = JSON.parse(localStorage.getItem('jh_applications') || '[]');
+
+// ── Server check ──
+function openModal() { document.getElementById('apiModal').classList.add('open'); }
+function closeModal() { document.getElementById('apiModal').classList.remove('open'); }
+async function checkServer() {
+  try {
+    const r = await fetch('/api/claude', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:5,messages:[{role:'user',content:'hi'}]}) });
+    const connected = r.status !== 0;
+    document.getElementById('apiDot').className = 'api-dot' + (connected ? ' connected' : '');
+    document.getElementById('apiStatus').textContent = connected ? 'Server connected' : 'Server offline';
+  } catch(e) {
+    document.getElementById('apiDot').className = 'api-dot';
+    document.getElementById('apiStatus').textContent = 'Server offline';
+  }
+}
+checkServer();
+
+// ── Tabs ──
+function switchTab(t, idx) {
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+  document.getElementById('tab-' + t).classList.add('active');
+  if (t === 'search') {
+    document.getElementById('noKeyNotice').style.display = 'none';
+  }
+}
+function switchTabTo(t) { switchTab(t, {setup:0,search:1,cover:2,tracker:3}[t]); }
+
+// ── Profile ──
+function saveProfile() {
+  localStorage.setItem('jh_profile', JSON.stringify({
+    name: document.getElementById('name').value,
+    skills: document.getElementById('skills').value,
+    roles: document.getElementById('roles').value,
+    location: document.getElementById('location').value,
+    bio: document.getElementById('bio').value,
+  }));
+  const btn = event.target;
+  btn.textContent = 'Saved!';
+  setTimeout(() => btn.textContent = 'Save profile', 1500);
+}
+(function loadProfile() {
+  const p = JSON.parse(localStorage.getItem('jh_profile') || 'null');
+  if (!p) return;
+  ['name','skills','roles','location','bio'].forEach(k => { if(p[k]) document.getElementById(k).value = p[k]; });
+})();
+
+// ── Job Board URLs ──
+function buildUrls(role, loc) {
+  const r = encodeURIComponent(role + ' fresher');
+  const l = encodeURIComponent(loc);
+  const rp = encodeURIComponent(role);
+  return {
+    linkedin: `https://www.linkedin.com/jobs/search/?keywords=${r}&location=${l}&f_E=1`,
+    naukri: `https://www.naukri.com/${role.toLowerCase().replace(/[^a-z0-9]+/g,'-')}-jobs-in-${loc.toLowerCase().replace(/[^a-z0-9]+/g,'-')}?experience=0`,
+    internshala: `https://internshala.com/jobs/${role.toLowerCase().replace(/[^a-z0-9]+/g,'-')}-jobs/`,
+    wellfound: `https://wellfound.com/jobs?role=${rp}&location=${l}`,
+    indeed: `https://in.indeed.com/jobs?q=${r}&l=${l}`,
+  };
+}
+
+function renderQuickLaunch() {
+  const role = document.getElementById('searchRole').value;
+  const loc = document.getElementById('searchLoc').value;
+  const u = buildUrls(role, loc);
+  document.getElementById('quickLaunch').innerHTML = `
+    <a class="board-btn" href="${u.linkedin}" target="_blank"><span class="b-icon li"></span>LinkedIn</a>
+    <a class="board-btn" href="${u.naukri}" target="_blank"><span class="b-icon nk"></span>Naukri</a>
+    <a class="board-btn" href="${u.internshala}" target="_blank"><span class="b-icon is"></span>Internshala</a>
+    <a class="board-btn" href="${u.wellfound}" target="_blank"><span class="b-icon wf"></span>Wellfound</a>
+    <a class="board-btn" href="${u.indeed}" target="_blank"><span class="b-icon id"></span>Indeed</a>
+  `;
+}
+renderQuickLaunch();
+
+// ── AI Job Search ──
+async function runSearch() {
+  const role = document.getElementById('searchRole').value;
+  const loc = document.getElementById('searchLoc').value;
+  const extra = document.getElementById('extraKw').value;
+  const skills = document.getElementById('skills').value;
+  const btn = document.getElementById('searchBtn');
+  btn.disabled = true; btn.textContent = 'Searching...';
+  document.getElementById('searchProgress').style.display = 'block';
+  document.getElementById('jobResults').innerHTML = '';
+
+  const prompt = `You are a job search assistant. Generate 8 realistic fresher job openings for:
+Role: ${role}, Location: ${loc}, Skills: ${skills}, Extra: ${extra || 'fresher 0-1 year 2026 batch'}
+Return ONLY a JSON array. Each object must have: title, company, location, type (Full-time or Internship), source (LinkedIn/Naukri/Internshala/Wellfound/Indeed), postedDays (1-14), matchPct (65-98), tags (2-4 strings).
+Return ONLY raw JSON. No markdown, no explanation.`;
+
+  try {
+    const res = await fetch('/api/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json',  },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
+    });
+    if (!res.ok) throw new Error('API error ' + res.status);
+    const data = await res.json();
+    const text = data.content.map(b => b.text || '').join('');
+    const jobs = JSON.parse(text.replace(/```json|```/g,'').trim());
+    document.getElementById('searchProgress').style.display = 'none';
+    btn.disabled = false; btn.textContent = 'Find jobs with AI ↗';
+    renderJobs(jobs, role, loc);
+  } catch(e) {
+    document.getElementById('searchProgress').style.display = 'none';
+    btn.disabled = false; btn.textContent = 'Find jobs with AI ↗';
+    document.getElementById('jobResults').innerHTML = `<div style="font-size:14px;color:var(--text2);padding:1rem 0;">Error: ${e.message}. Check your API key and try again.</div>`;
+  }
+}
+
+function renderJobs(jobs, role, loc) {
+  const el = document.getElementById('jobResults');
+  el.innerHTML = `<div style="font-size:13px;color:var(--text2);margin-bottom:12px;">${jobs.length} openings found — click any board button to apply directly</div>`;
+  const iconMap = { LinkedIn:'li', Naukri:'nk', Internshala:'is', Wellfound:'wf', Indeed:'id' };
+  jobs.forEach(j => {
+    const mc = j.matchPct >= 85 ? 'b-green' : j.matchPct >= 75 ? 'b-blue' : 'b-amber';
+    const u = buildUrls(j.title, j.location || loc);
+    const srcKey = j.source in u ? j.source.toLowerCase().replace('naukri','naukri') : 'linkedin';
+    const srcUrl = {LinkedIn:u.linkedin,Naukri:u.naukri,Internshala:u.internshala,Wellfound:u.wellfound,Indeed:u.indeed}[j.source] || u.linkedin;
+    const jdSnippet = `${j.title} at ${j.company} in ${j.location}. Required skills: ${(j.tags||[]).join(', ')}.`;
+    el.innerHTML += `
+    <div class="job-card">
+      <div class="job-title">${j.title}</div>
+      <div class="job-sub">${j.company} &middot; ${j.location}</div>
+      <div class="job-meta">
+        <span class="badge b-gray">${j.source}</span>
+        <span class="badge b-blue">${j.type}</span>
+        <span class="badge ${mc}">${j.matchPct}% match</span>
+        <span class="badge b-gray">${j.postedDays}d ago</span>
+        ${(j.tags||[]).map(t=>`<span class="badge b-teal">${t}</span>`).join('')}
+      </div>
+      <div class="job-actions">
+        <a class="board-btn apply-primary" href="${srcUrl}" target="_blank"><span class="b-icon ${iconMap[j.source]||'li'}"></span>Apply on ${j.source}</a>
+        <a class="board-btn" href="${u.linkedin}" target="_blank"><span class="b-icon li"></span>LinkedIn</a>
+        <a class="board-btn" href="${u.naukri}" target="_blank"><span class="b-icon nk"></span>Naukri</a>
+        <a class="board-btn" href="${u.internshala}" target="_blank"><span class="b-icon is"></span>Internshala</a>
+        <a class="board-btn" href="${u.indeed}" target="_blank"><span class="b-icon id"></span>Indeed</a>
+        <button class="board-btn" onclick="useForCover(\`${jdSnippet.replace(/`/g,"'")}\`)">Cover letter ↗</button>
+        <button class="board-btn" onclick="trackJobQuick('${j.company.replace(/'/g,"\\'")}','${j.title.replace(/'/g,"\\'")}')">Track ↗</button>
+      </div>
+    </div>`;
+  });
+}
+
+function useForCover(jd) { document.getElementById('jdInput').value = jd; switchTabTo('cover'); }
+
+// ── Cover Letter ──
+async function generateCover() {
+  const jd = document.getElementById('jdInput').value.trim();
+  if (!jd) { alert('Please paste a job description first.'); return; }
+  const name = document.getElementById('name').value;
+  const skills = document.getElementById('skills').value;
+  const bio = document.getElementById('bio').value;
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true; btn.textContent = 'Generating...';
+  document.getElementById('genProgress').style.display = 'block';
+  document.getElementById('coverOut').style.display = 'none';
+  const bar = document.getElementById('genBar');
+  const msg = document.getElementById('genMsg');
+  const steps = ['Analyzing job description...','Matching your skills...','Drafting cover letter...','Finalizing...'];
+  let step = 0;
+  const iv = setInterval(() => { step = Math.min(step+1, steps.length-1); bar.style.width=((step+1)/steps.length*100)+'%'; msg.textContent=steps[step]; }, 700);
+
+  const prompt = `Write a professional personalized cover letter for a fresher job applicant.
+Candidate: ${name}
+Skills: ${skills}
+Bio: ${bio}
+Job Description: ${jd}
+Instructions: 3-4 paragraphs, under 300 words. No placeholder brackets like [Company Name]. Be specific to the role. End with a confident call to action.
+After the letter, on a new line write exactly: MATCH_SCORE: X% (honest 60-95% based on actual fit).`;
+
+  try {
+    const res = await fetch('/api/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json',  },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
+    });
+    if (!res.ok) throw new Error('API error ' + res.status);
+    const data = await res.json();
+    clearInterval(iv); bar.style.width='100%'; document.getElementById('genProgress').style.display='none';
+    btn.disabled=false; btn.textContent='Generate cover letter ↗';
+    const text = data.content.map(b=>b.text||'').join('');
+    const matchLine = text.match(/MATCH_SCORE:\s*(\d+%)/);
+    document.getElementById('coverText').textContent = text.replace(/MATCH_SCORE:.*$/m,'').trim();
+    document.getElementById('matchScore').textContent = matchLine ? matchLine[1]+' skill match with this role' : '';
+    document.getElementById('coverOut').style.display = 'block';
+  } catch(e) {
+    clearInterval(iv); document.getElementById('genProgress').style.display='none';
+    btn.disabled=false; btn.textContent='Generate cover letter ↗';
+    alert('Error: ' + e.message);
+  }
+}
+
+function clearCover() { document.getElementById('jdInput').value=''; document.getElementById('coverOut').style.display='none'; }
+
+function copyCover() {
+  navigator.clipboard.writeText(document.getElementById('coverText').textContent).then(()=>{
+    const b=event.target; b.textContent='Copied!'; setTimeout(()=>b.textContent='Copy',1500);
+  });
+}
+
+function downloadCover() {
+  const text = document.getElementById('coverText').textContent;
+  const blob = new Blob([text], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'cover-letter.txt';
+  a.click();
+}
+
+// ── Tracker ──
+function trackJobQuick(company, role) {
+  document.getElementById('tComp').value = company;
+  document.getElementById('tRole').value = role;
+  document.getElementById('tDate').value = new Date().toISOString().split('T')[0];
+  switchTabTo('tracker');
+}
+
+function addApplication() {
+  const comp = document.getElementById('tComp').value.trim();
+  const role = document.getElementById('tRole').value.trim();
+  const date = document.getElementById('tDate').value;
+  const status = document.getElementById('tStatus').value;
+  if (!comp||!role) { alert('Please enter company and role.'); return; }
+  applications.push({ comp, role, date, status, id: Date.now() });
+  localStorage.setItem('jh_applications', JSON.stringify(applications));
+  document.getElementById('tComp').value=''; document.getElementById('tRole').value='';
+  renderTracker();
+}
+
+function updateStatus(id, status) {
+  const a=applications.find(x=>x.id===id);
+  if(a){ a.status=status; localStorage.setItem('jh_applications',JSON.stringify(applications)); renderTracker(); }
+}
+
+function removeApp(id) {
+  applications=applications.filter(a=>a.id!==id);
+  localStorage.setItem('jh_applications',JSON.stringify(applications));
+  renderTracker();
+}
+
+function renderTracker() {
+  document.getElementById('t-applied').textContent = applications.filter(a=>['applied','interview','offer'].includes(a.status)).length;
+  document.getElementById('t-interview').textContent = applications.filter(a=>a.status==='interview').length;
+  document.getElementById('t-offer').textContent = applications.filter(a=>a.status==='offer').length;
+  const el = document.getElementById('trackerList');
+  if (!applications.length) { el.innerHTML='<div style="font-size:14px;color:var(--text2);padding:0.5rem 0;">No applications tracked yet.</div>'; return; }
+  const sc = {applied:'b-blue',interview:'b-amber',offer:'b-green',rejected:'b-gray',pending:'b-gray'};
+  el.innerHTML = applications.slice().reverse().map(a=>`
+  <div class="job-card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+      <div>
+        <div class="job-title">${a.comp}</div>
+        <div class="job-sub">${a.role} &middot; ${a.date||'—'}</div>
+        <div class="job-meta"><span class="badge ${sc[a.status]||'b-gray'}">${a.status}</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <select style="font-size:12px;padding:5px 8px;" onchange="updateStatus(${a.id},this.value)">
+          ${['applied','interview','offer','rejected','pending'].map(s=>`<option value="${s}"${s===a.status?' selected':''}>${s}</option>`).join('')}
+        </select>
+        <button class="btn btn-sm" onclick="removeApp(${a.id})">Remove</button>
+      </div>
+    </div>
+  </div>`).join('');
+}
+
+renderTracker();
+document.getElementById('tDate').value = new Date().toISOString().split('T')[0];
+</script>
+</body>
+</html>
